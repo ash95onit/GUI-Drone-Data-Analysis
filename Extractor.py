@@ -1,0 +1,1 @@
+# This file should contain the object for the metadata extraction and storage
