@@ -1,14 +1,18 @@
 import os
 import sys
 import cv2
+import pandas as pd
 
+# PyQt
 from PyQt5 import uic
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QFileDialog, QHBoxLayout, QLabel, 
-        QPushButton, QSizePolicy, QSlider, QStyle, QVBoxLayout, QWidget, QStatusBar, QMessageBox, QScrollArea)
+        QPushButton, QSizePolicy, QSlider, QStyle, QVBoxLayout, QWidget, QStatusBar, QMessageBox, 
+        QScrollArea, QTableView, QTableWidget, QTableWidgetItem, QTableWidgetSelectionRange, QHeaderView, QAbstractItemView)
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
-from PyQt5.QtCore import QDir, Qt, QUrl, QSize, QTimer, QThread
+from PyQt5.QtCore import QDir, Qt, QUrl, QSize, QTimer, QThread, QAbstractTableModel
 from PyQt5.QtGui import QIcon, QFont, QImage, QPixmap, QPalette, QPainter
+
 
 class VideoThread(QThread):
     def __init__(self, videoFileName):
@@ -58,7 +62,6 @@ class MainGui(QMainWindow):
             self.imageLabel.setScaledContents(True)
 
             
-
             # VIDEO TAB
             self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
             videoWidget = self.findChild(QVideoWidget, 'videoWidget')
@@ -94,6 +97,20 @@ class MainGui(QMainWindow):
             self.analyseVideoButton.setEnabled(False)
             self.analyseVideoButton.clicked.connect(self.analyseVideo)
 
+            # Metadata extraction
+            openMetadataButton = self.findChild(QPushButton, 'openMetadataButton')
+            openMetadataButton.setToolTip("Open Metadata File")
+            openMetadataButton.setStatusTip("Open Metadata File")
+            openMetadataButton.clicked.connect(self.openMetadataDialog)
+
+            self.dataTableWidget = self.findChild(QTableWidget, 'dataTableWidget')
+            self.dataTableWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            self.dataTableWidget.setRowCount(5)
+            self.dataTableWidget.setColumnCount(2)
+            self.dataTableWidget.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+            self.dataTableWidget.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+            self.dataTableWidget.setHorizontalHeaderItem(0, QTableWidgetItem("Name"))
+            self.dataTableWidget.setHorizontalHeaderItem(1, QTableWidgetItem("Value"))
 
     # IMAGE FUNCTIONS
     def openImageDialog(self):
@@ -110,6 +127,8 @@ class MainGui(QMainWindow):
             self.imageLabel.setPixmap(QPixmap.fromImage(image))
             self.scaleFactor = 1.0
             self.analyseImageButton.setEnabled(True)
+        else:
+            pass
     
     def analyseImage(self):
         self.image = cv2.imread(self.imageFileName)
@@ -138,6 +157,8 @@ class MainGui(QMainWindow):
             self.playButton.setEnabled(True)
             self.analyseVideoButton.setEnabled(True)
             self.play()
+        else:
+            pass
 
 
     def analyseVideo(self):
@@ -173,6 +194,26 @@ class MainGui(QMainWindow):
 
     def setPosition(self, position):
         self.mediaPlayer.setPosition(position)
+
+    # Metadata open dialog box
+    def openMetadataDialog(self):
+        self.csvFileName, _ = QFileDialog.getOpenFileName(self,"Select CSV ",".", "csv Files (*.csv)")
+
+        if self.csvFileName != '':
+            self.display_metadata(self.csvFileName)
+        else:
+            pass
+
+    # Display extracted csv data
+    def display_metadata(self, fileName):
+        self.extract_metadata(fileName)
+        
+    
+    # csv Metadata extraction
+    def extract_metadata(self, fileName):
+        self.data = pd.read_csv(fileName)
+       
+
 
 if __name__ == "__main__":
     
